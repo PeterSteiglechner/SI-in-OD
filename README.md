@@ -53,6 +53,11 @@ In the article, we vary `p_rewire' between 0 and 1 and use 1000 random seeds.
 | see environment.yml | |
 
 
+## Netlogo
+
+For interested people who prefer netlogo over python, we have also implemented a version in netlogo. 
+**Disclaimer**: Unlike the python version, this has not been thoroughly tested and should be used with caution.
+
 
 
 
