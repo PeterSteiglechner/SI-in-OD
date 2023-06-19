@@ -29,7 +29,7 @@ For batch simulations use
 ```
 .\run.sh n k k_in k_out delta_0 kappa communication_frequency sig_op_0 p_rewire T resolution seed 
 ```
-where T is the time horizon and resolution can be "high" for the full range of in- and out-group perception parameters $\alpha_{\rm in/out} \in [0,1[$ or "low" for $\alpha_{\rm in/out} \in \{ {\rm U1}(0.25, 0.25), \ {\rm U2}(0.5,0.5), \ {\rm U3}(0.75,0.75)\}$ or ${\rm U3}(0.75,0.25)\}$.
+where T is the time horizon and resolution can be "high" for the full range of in- and out-group perception parameters $\alpha_{\rm in/out} \in [0,1[$ or "low" for $\alpha_{\rm in/out} \in \{ {\rm U1}(0.25, 0.25), \ {\rm U2}(0.5,0.5), \ {\rm U3}(0.75,0.75), \ {\rm U3}(0.75,0.25)\}$.
 
 To reproduce the results in the main article run: 
 ```
