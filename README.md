@@ -5,7 +5,7 @@ This is an agent-based model to study the effect of social identity and in-group
 For a detailed model description see [todo:insert link]
 
 <p align="center">
-  <img src="Networks_p=0.png" width="600">
+  <img src="p0_networksPlots_025075.png" width="600">
 </p>
 
 For a single run use
