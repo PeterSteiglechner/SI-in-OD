@@ -17,13 +17,13 @@ python model.py
 
 For batch simulations use 
 ```
-.\run.sh n k h delta_0 kappa communication_frequency sig_op_0 p_rewire T resolution seed 
+.\run.sh n k k_in k_out delta_0 kappa communication_frequency sig_op_0 p_rewire T resolution seed 
 ```
 where T is the time horizon and resolution can be "high" for the full range of in- and out-group perception parameters $\alpha_{\rm in/out} \in [0,1[$ or "low" for $\alpha_{\rm in/out} \in \{ {\rm S1}(0.3,0.3), \ {\rm S2}(0.8,0.8), \ {\rm S3}(0.8,0.3)\}$.
 
 To reproduce the results in the main article run: 
 ```
-.\run.sh 100 10 0.6 0.0 0.0002 0.2 0.2 0.0 5000 low 420 
+.\run.sh 100 10 8 2 0.0 0.0002 0.2 0.2 0.0 5000 low 420 
 ```
 In the article, we vary `p_rewire' between 0 and 1 and use 1000 random seeds.
 
@@ -33,7 +33,9 @@ In the article, we vary `p_rewire' between 0 and 1 and use 1000 random seeds.
 |-----|-----|-----|
 | n_agents | number of agents | 100 |
 | k | average node degree per agent | 10 |
-| h | homophily, $h=\frac{k_{\rm in} - k_{\rm out} }{k}$, where $k_{\rm in/out}$ are the average number of links to in- and out-group members per agent | 0.6 |
+%| h | homophily, $h=\frac{k_{\rm in} - k_{\rm out} }{k}$, where $k_{\rm in/out}$ are the average number of links to in- and out-group members per agent | 0.6 |
+| k_in | average number of in-group links per agent $\frac{k_{\rm in}$ | 8 |
+| k_out | average number of out-group links per agent $\frac{k_{\rm out}$ | 2 |
 | a_ins | in-group perception values | 0.1,0.2,0.3,...,0.8,0.9,0.99 |
 | a_outs | out-group perception values. Note, only values smaller or equal than in-group perception are simulated | 0.1,0.2,0.3,...,0.8,0.9,0.99 |
 | sig_op_0 | fixed initial opinion uncertainty of the agents | 0.2 |
