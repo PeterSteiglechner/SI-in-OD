@@ -2,7 +2,7 @@
 author: Peter Steiglechner
 title: model.py
 project: in-group favouritism bias in opinion formation.
-last updated: January 2023
+last updated: June 2023
 """
 import matplotlib.pyplot as plt
 import numpy as np
@@ -43,7 +43,8 @@ class OpinionModel():
                 - "alpha_out" (float), 
                 - "k" (float), 
                 - "p_rewire" (float),
-                - "h" (float), 
+                - "k_in" (int), 
+                - "k_out" (int), 
                 - "sig_op_0" (float), 
                 - "communication_frequency" (float), 
                 - "kappa" (float), 
@@ -60,7 +61,8 @@ class OpinionModel():
         self.alpha_out = _params["alpha_out"]                   # out-group filter transparency
         self.k = _params["k"]                                   # avg node degree per agent
         self.p_rewire = _params["p_rewire"]                     # rewiring probability for network links 
-        self.h = _params["h"]                                   # degree of homophily in the network between 0 and 1
+        self.k_in = _params["k_in"]                                   # degree of homophily in the network between 0 and 1
+        self.k_out = _params["k_out"]                                   # degree of homophily in the network between 0 and 1
         self.sig_op_0 = _params["sig_op_0"]                     # variance of (gaussian) initial opinions
         self.communication_frequency = _params["communication_frequency"]         # interaction frequency f
         self.kappa = _params["kappa"]                           # diffusion constant
@@ -110,15 +112,14 @@ class OpinionModel():
         # ==== Create Social Ids and Network ====
         np.random.seed(self.seed)
         # calculate avg within and between group link numbers from average node degree $k$ and homophily $h$
-        self.k_out = (1-self.h)/2 * self.k
-        self.k_in = (1+self.h)/2 * self.k
-        assert ((self.k_in == int(self.k_in)) and (self.k_out == int(self.k_out)))
+        # in earlier versions, a degree of homophily h was defined: and self.k_out = (1-self.h)/2 * self.k; self.k_in = (1+self.h)/2 * self.k
+        assert ((self.k_out + self.k_in) == self.k)
         assert (self.n_agents % len(self.social_id_groups) == 0)
         group_size = int(self.n_agents/len(self.social_id_groups))
         self.G, self.pos = create_withinAndBetweenGroup_network(
             self.n_agents,
-            int(self.k_in),
-            int(self.k_out),
+            self.k_in,
+            self.k_out,
             self.p_rewire,
             self.seed
         )
@@ -149,13 +150,13 @@ class OpinionModel():
             self.schedule.append(ag)
 
         # === Data Collection ===
-        # collect all "expected beliefs" (= "agent votes")
-        self.all_ops = {"0": np.array([ag.exp_b for ag in self.schedule])}
+        # collect all "mean_op" (= "agent votes")
+        self.all_mean_ops = {"0": np.array([ag.mean_op for ag in self.schedule])}
         if self.agent_reporter:
-            self.all_sig = {"0": np.array([ag.sig for ag in self.schedule])}
-        self.all_mean_exp_b = {"0": np.mean(self.all_ops["0"])}
-        self.std_exp_b = np.std(self.all_ops["0"])
-        self.all_std_exp_b = {"0": np.std(self.all_ops["0"])}
+            self.all_sigs = {"0": np.array([ag.sig for ag in self.schedule])}
+        self.avg_mean_ops = {"0": np.mean(self.all_mean_ops["0"])}
+        self.std_mean_ops = np.std(self.all_mean_ops["0"])
+        self.all_std_mean_op = {"0": np.std(self.all_mean_ops["0"])}
 
         # tau, the time at which the society has reached consensus (default np.nan)
         self.consensus_time = np.nan
@@ -174,22 +175,22 @@ class OpinionModel():
             ag.step()
         self.time += 1.0
         # calc standard deviation every time step to get precise consensus time
-        self.std_exp_b = np.std([ag.exp_b for ag in self.schedule])
+        self.std_mean_ops = np.std([ag.mean_op for ag in self.schedule])
         if self.time in self.track_times:
             self.observe()
             self.stored_times.append(self.time)
         return
 
     def observe(self):
-        """store the mean and standard deviation of the mean opinions (or expected_beliefs) of all agents"""
-        all_exp_beliefs = np.array([ag.exp_b for ag in self.schedule])      # all agent mean opinions (or expected belief)
-        self.all_mean_exp_b[str(self.time)] = np.mean(all_exp_beliefs)      
-        self.all_std_exp_b[str(self.time)] = np.std(all_exp_beliefs)        # dispersion
+        """store the mean and standard deviation of the mean opinions of all agents"""
+        curr_mean_ops = np.array([ag.mean_op for ag in self.schedule])      # all agent mean opinions 
+        self.avg_mean_ops[str(self.time)] = np.mean(curr_mean_ops)      
+        self.std_mean_ops[str(self.time)] = np.std(curr_mean_ops)        # dispersion
 
         if self.agent_reporter:
             # store also agent states
-            self.all_ops[str(self.time)] = all_exp_beliefs
-            self.all_sig[str(self.time)] = np.array([ag.sig for ag in self.schedule])
+            self.all_ops[str(self.time)] = curr_mean_ops
+            self.all_sigs[str(self.time)] = np.array([ag.sig for ag in self.schedule])
         return
 
     def simulation(self):
@@ -197,15 +198,15 @@ class OpinionModel():
         time_cons = []  # times at which there is consensus
         for t in range(self.track_times[-1]):
             self.step()
-            if self.std_exp_b < self.sigma_threshold_consensus:
+            if self.std_mean_ops < self.sigma_threshold_consensus:
                 # add current time step to consensus times
                 time_cons.append(t)
             if len(time_cons) > 20:
                 # stop the simulation after 20 time steps with consensus, 
                 # then store consensus time, which is the first time at which consensus occurred
                 self.consensus_time = time_cons[0]
-                all_exp_beliefs = np.array([ag.exp_b for ag in self.schedule])   
-                self.consensus_mean = np.mean(all_exp_beliefs)
+                curr_mean_ops = np.array([ag.mean_op for ag in self.schedule]) 
+                self.consensus_mean = np.mean(curr_mean_ops)
                 if not self.agent_reporter:
                     break
         return
@@ -221,7 +222,7 @@ class Agent():
         - a position xy in network (for plotting): list of two floats 
         - an opinion distribution: array of floats with length len(model.belief_space) 
 
-        calculate the agent's mean opinion (or expected_belief) and its opinion uncertainty.
+        calculate the agent's mean opinion  and its opinion uncertainty.
         """
         self.model = model
         self.unique_id = unique_id
@@ -229,9 +230,9 @@ class Agent():
         self.social_identity = social_identity
         self.op = op_dist
 
-        # calculate expected_belief and sigma
-        self.exp_b = np.dot(self.op, self.model.belief_space) / self.op.sum()
-        var = np.dot(self.op, self.model.belief_space ** 2) / self.op.sum() - self.exp_b ** 2
+        # calculate mean_op and sigma
+        self.mean_op = np.dot(self.op, self.model.belief_space) / self.op.sum()
+        var = np.dot(self.op, self.model.belief_space ** 2) / self.op.sum() - self.mean_op ** 2
         self.sig = var ** 0.5 if var > 0 else sys.float_info.epsilon
 
         # assign parameters from the model
@@ -249,18 +250,17 @@ class Agent():
         Update the agent's opinion via (1) communication (with prob communication_frequency) or (2) diffusion
         """
         if np.random.random() < self.communication_frequency:
+            # social interaction (if the agent has a neighbour)
             if len(self.nbs) == 0:
                 if self.model.time == 1:
                     print("Network not connected (id={})".format(self.unique_id))
                 return
             else:
-                # interact and be socially influenced, i.e. receive and perceive a neighbour's opinion, then update
-                self.interact()
+                self.update_opinion_in_interaction()
         else:
-            # do not interact
-            self.update_diffusion()
+            self.update_opinion_in_non_interaction()
 
-    def interact(self):
+    def update_opinion_in_interaction(self):
         # select one of the neighbours --> agent j
         speaker_id = np.random.choice(self.nbs)
         speaker = self.model.schedule[speaker_id]
@@ -277,22 +277,22 @@ class Agent():
             posterior_op = self.op
             print("{} has posterior_op=0.".format(self.unique_id), end=", ")
         self.op = posterior_op / (posterior_op.sum() * self.model.db)
-        # calculate expected_belief and sigma
-        self.exp_b = np.dot(self.op, self.model.belief_space) / self.op.sum()
-        var = np.dot(self.op, self.model.belief_space ** 2) / self.op.sum() - self.exp_b ** 2
+        # calculate mean_op and sigma
+        self.mean_op = np.dot(self.op, self.model.belief_space) / self.op.sum()
+        var = np.dot(self.op, self.model.belief_space ** 2) / self.op.sum() - self.mean_op ** 2
         self.sig = var ** 0.5 if var > 0 else sys.float_info.epsilon
         return
 
-    def update_diffusion(self):
+    def update_opinion_in_non_interaction(self):
         """
-        during non-communication, the opinion distribution diffuses slowly
+        during non-interation, the opinion distribution diffuses slowly
         """
         # solve 1D heat equation (using the A^-1 matrix from backward implicit Euler scheme defined above)
         diffused_op = np.dot(self.model.mat_heat_equ_inv, self.op)
         self.op = diffused_op / (diffused_op.sum() * self.model.db)
-        # calculate expected_belief and sigma
-        self.exp_b = np.dot(self.op, self.model.belief_space) / self.op.sum()
-        var = np.dot(self.op, self.model.belief_space ** 2) / self.op.sum() - self.exp_b ** 2
+        # calculate mean_opinion and sigma
+        self.mean_op = np.dot(self.op, self.model.belief_space) / self.op.sum()
+        var = np.dot(self.op, self.model.belief_space ** 2) / self.op.sum() - self.mean_op ** 2
         self.sig = var ** 0.5 if var > 0 else sys.float_info.epsilon
         return
 
@@ -309,9 +309,10 @@ if __name__ == "__main__":
             folder="", 
             n_agents=100, 
             k=10, 
-            h=0.6, 
-            a_ins=[0.3, 0.8], 
-            a_outs=[0.3, 0.8], 
+            k_in=8,
+            k_out=2,
+            a_ins=[0.25, 0.5, 0.75], 
+            a_outs=[0.25, 0.5, 0.75], 
             sig_op_0=0.2, 
             communication_frequency=0.2, 
             kappa=0.0002, 
@@ -319,7 +320,6 @@ if __name__ == "__main__":
             track_times=np.arange(0,3001, 1), 
             p_rewire=0.0
             )
-        #seed = 24
         name = perform_one_run(OpinionModel, settings, seed, agent_reporter=True)
         results = xr.open_dataset(name, engine="netcdf4")
         print(results)
