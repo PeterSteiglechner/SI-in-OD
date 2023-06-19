@@ -155,8 +155,8 @@ class OpinionModel():
         if self.agent_reporter:
             self.all_sigs = {"0": np.array([ag.sig for ag in self.schedule])}
         self.avg_mean_ops = {"0": np.mean(self.all_mean_ops["0"])}
-        self.std_mean_ops = np.std(self.all_mean_ops["0"])
-        self.all_std_mean_op = {"0": np.std(self.all_mean_ops["0"])}
+        self.curr_std_mean_ops = np.std(self.all_mean_ops["0"])
+        self.std_mean_ops = {"0": np.std(self.all_mean_ops["0"])}
 
         # tau, the time at which the society has reached consensus (default np.nan)
         self.consensus_time = np.nan
@@ -175,7 +175,7 @@ class OpinionModel():
             ag.step()
         self.time += 1.0
         # calc standard deviation every time step to get precise consensus time
-        self.std_mean_ops = np.std([ag.mean_op for ag in self.schedule])
+        self.curr_std_mean_ops = np.std([ag.mean_op for ag in self.schedule])
         if self.time in self.track_times:
             self.observe()
             self.stored_times.append(self.time)
@@ -189,7 +189,7 @@ class OpinionModel():
 
         if self.agent_reporter:
             # store also agent states
-            self.all_ops[str(self.time)] = curr_mean_ops
+            self.all_mean_ops[str(self.time)] = curr_mean_ops
             self.all_sigs[str(self.time)] = np.array([ag.sig for ag in self.schedule])
         return
 
@@ -198,7 +198,7 @@ class OpinionModel():
         time_cons = []  # times at which there is consensus
         for t in range(self.track_times[-1]):
             self.step()
-            if self.std_mean_ops < self.sigma_threshold_consensus:
+            if self.curr_std_mean_ops < self.sigma_threshold_consensus:
                 # add current time step to consensus times
                 time_cons.append(t)
             if len(time_cons) > 20:
@@ -311,8 +311,8 @@ if __name__ == "__main__":
             k=10, 
             k_in=8,
             k_out=2,
-            a_ins=[0.25, 0.5, 0.75], 
-            a_outs=[0.25, 0.5, 0.75], 
+            a_ins=[0.75], 
+            a_outs=[0.25], 
             sig_op_0=0.2, 
             communication_frequency=0.2, 
             kappa=0.0002, 

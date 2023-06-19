@@ -2,16 +2,26 @@
 
 This is an agent-based model to study the effect of social identity and in-group bias on consensus formation in virtual societies. 
 
-For a detailed model description see [todo:insert link]
+The schematic below shows the main processes and parameters of the model. For a detailed model description see [todo:insert link to manuscript]
+
+<p align="center">
+  <img src="sketch/sketch_MS1_v13.png" width="600">
+</p>
+
+The model produces opinion patterns that may look as follows for a society $U_2$ of agents unaffected or a society $B$ of agents affected by in-group biases. 
 
 <p align="center">
   <img src="p0_networksPlots_025075.png" width="600">
 </p>
 
+## Usage
+
 For a single run use
 ```
 python model.py 
 ```
+
+Run time (on a normal laptop) ca. 20 sec
 
 ## Batch runs
 

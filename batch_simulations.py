@@ -64,9 +64,9 @@ def perform_one_run(modelclass, settings, seed, agent_reporter=False):
                 "p_rewire": settings["p_rewire"],
                 "seed": seed,
             }
-    fnameBase = f"ms1_WS{params["p_rewire"]}_n{params["n_agents"]}_k-{params["k"]}"+\
-        f"_kin-{params["k_in"]}_kout-{params["k_out"]}_sig-{params["sig_op_0"]}"+\
-        f"_commf-{params["communication_frequency"]}_kappa-{params["kappa"]}_delta-{params["delta_0"]}"
+    fnameBase = f"ms1_WS{params['p_rewire']}_n{params['n_agents']}_k-{params['k']}"+\
+        f"_kin-{params['k_in']}_kout-{params['k_out']}_sig-{params['sig_op_0']}"+\
+        f"_commf-{params['communication_frequency']}_kappa-{params['kappa']}_delta-{params['delta_0']}"
     for n, ain in enumerate(a_ins):
         fullname = folder+fnameBase+"_ain{}_seed-{}.ncdf".format(ain, seed)
         if not os.path.exists(fullname):
@@ -113,8 +113,8 @@ if __name__=="__main__":
         a_ins = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99]
         a_outs = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99]
     elif resolution =="low":
-        a_ins = [0.3,0.8]
-        a_outs = [0.3,0.8]
+        a_ins = [0.25, 0.5, 0.75]
+        a_outs = [0.25, 0.5, 0.75]
 
     folder = "data/"
     #if not os.path.exists(folder):
