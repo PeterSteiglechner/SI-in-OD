@@ -16,12 +16,12 @@ The model produces opinion patterns that may look as follows for a society $U_2$
 
 ## Usage
 
-For a single run use
+For a single run, use
 ```
 python model.py 
 ```
 
-Run time (on a normal laptop) ca. 20 sec
+Run time (on a normal laptop): ca. 20 sec
 
 ## Batch runs
 
@@ -29,7 +29,7 @@ For batch simulations use
 ```
 .\run.sh n k k_in k_out delta_0 kappa communication_frequency sig_op_0 p_rewire T resolution seed 
 ```
-where T is the time horizon and resolution can be "high" for the full range of in- and out-group perception parameters $\alpha_{\rm in/out} \in [0,1[$ or "low" for $\alpha_{\rm in/out} \in \{ {\rm S1}(0.3,0.3), \ {\rm S2}(0.8,0.8), \ {\rm S3}(0.8,0.3)\}$.
+where T is the time horizon and resolution can be "high" for the full range of in- and out-group perception parameters $\alpha_{\rm in/out} \in [0,1[$ or "low" for $\alpha_{\rm in/out} \in \{ {\rm U1}(0.25, 0.25), \ {\rm U2}(0.5,0.5), \ {\rm U3}(0.75,0.75)\}$ or ${\rm U3}(0.75,0.25)\}$.
 
 To reproduce the results in the main article run: 
 ```
