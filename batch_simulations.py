@@ -16,8 +16,8 @@ import os
 def save_batch(m):
     """ save model variables and attributes into ncdf file """
     data_vars = dict(
-                mean_exp_b=(["seed", "time", "ain", "aout"], np.array([m.all_mean_exp_b[str(t)] for t in m.stored_times]).reshape(1,len(m.stored_times), 1, 1)),
-                std_exp_b=(["seed", "time", "ain", "aout"], np.array([m.all_std_exp_b[str(t)] for t in m.stored_times]).reshape(1,len(m.stored_times),1,1)),
+                avg_mean_ops=(["seed", "time", "ain", "aout"], np.array([m.avg_mean_ops[str(t)] for t in m.stored_times]).reshape(1,len(m.stored_times), 1, 1)),
+                std_mean_ops=(["seed", "time", "ain", "aout"], np.array([m.std_mean_ops[str(t)] for t in m.stored_times]).reshape(1,len(m.stored_times),1,1)),
                 consensus_time=(["seed", "ain", "aout"], np.array([m.consensus_time]).reshape(1,1,1)),
                 consensus_mean=(["seed", "ain", "aout"], np.array([m.consensus_mean]).reshape(1,1,1)),
             )
@@ -28,8 +28,8 @@ def save_batch(m):
                 aout=[m.alpha_out]
             )
     if m.agent_reporter:
-        data_vars["exp_b"] = (["seed", "time", "AgentID", "ain", "aout"], np.array([m.all_ops[str(t)] for t in m.stored_times]).reshape(1,len(m.stored_times), m.n_agents,1,1))
-        data_vars["sig"] = (["seed", "time", "AgentID", "ain", "aout"], np.array([m.all_sig[str(t)] for t in m.stored_times]).reshape(1,len(m.stored_times), m.n_agents,1,1))
+        data_vars["mean_op"] = (["seed", "time", "AgentID", "ain", "aout"], np.array([m.all_mean_ops[str(t)] for t in m.stored_times]).reshape(1,len(m.stored_times), m.n_agents,1,1))
+        data_vars["sig"] = (["seed", "time", "AgentID", "ain", "aout"], np.array([m.all_sigs[str(t)] for t in m.stored_times]).reshape(1,len(m.stored_times), m.n_agents,1,1))
         coords["AgentID"] =np.arange(m.n_agents)
 
     
@@ -38,14 +38,14 @@ def save_batch(m):
             coords=coords,
             attrs=dict(social_id_groups=m.social_id_groups),
         )
-    for att in ["n_agents", "h", "k", "k_in", "k_out", "p_rewire", "sig_op_0","communication_frequency", "kappa", "delta_0", "sigma_threshold_consensus"]:
+    for att in ["n_agents", "k", "k_in", "k_out", "p_rewire", "sig_op_0","communication_frequency", "kappa", "delta_0", "sigma_threshold_consensus"]:
         ds.attrs[att] = eval("m."+att)
     return ds
 
 
 
 def perform_one_run(modelclass, settings, seed, agent_reporter=False):
-    #folder, n_agents, k, h, a_ins, a_outs, sig_op_0, communication_frequency, kappa, delta_0, track_times, p_rewire = settings
+    #folder, n_agents, k, a_ins, a_outs, sig_op_0, communication_frequency, kappa, delta_0, track_times, p_rewire = settings
     folder = settings["folder"]
     a_ins = settings["a_ins"]
     a_outs = settings["a_outs"]
@@ -53,7 +53,8 @@ def perform_one_run(modelclass, settings, seed, agent_reporter=False):
                 "n_agents": settings["n_agents"],
                 "social_id_groups": [0, 1],
                 "k": settings["k"],  
-                "h": settings["h"],  
+                "k_in": settings["k_in"],  
+                "k_out": settings["k_out"],  
                 "alpha_in": None,
                 "alpha_out": None,
                 "sig_op_0": settings["sig_op_0"],
@@ -63,7 +64,9 @@ def perform_one_run(modelclass, settings, seed, agent_reporter=False):
                 "p_rewire": settings["p_rewire"],
                 "seed": seed,
             }
-    fnameBase = "ms1_WS{}_n{}_k-{}_h-{}_sig-{}_commf-{}_kappa-{}_delta-{}".format(params["p_rewire"], params["n_agents"], params["k"], params["h"], params["sig_op_0"], params["communication_frequency"], params["kappa"], params["delta_0"])
+    fnameBase = f"ms1_WS{params["p_rewire"]}_n{params["n_agents"]}_k-{params["k"]}"+\
+        f"_kin-{params["k_in"]}_kout-{params["k_out"]}_sig-{params["sig_op_0"]}"+\
+        f"_commf-{params["communication_frequency"]}_kappa-{params["kappa"]}_delta-{params["delta_0"]}"
     for n, ain in enumerate(a_ins):
         fullname = folder+fnameBase+"_ain{}_seed-{}.ncdf".format(ain, seed)
         if not os.path.exists(fullname):
@@ -92,15 +95,16 @@ if __name__=="__main__":
 
     n_agents = int(sys.argv[1])
     k  = float(sys.argv[2])
-    h = float(sys.argv[3])
-    delta_0 = float(sys.argv[4])
-    kappa = float(sys.argv[5]) 
-    communication_frequency = float(sys.argv[6]) 
-    sig_op_0 = float(sys.argv[7]) 
-    p_rewire = float(sys.argv[8])
-    T = int(sys.argv[9])    
-    resolution = sys.argv[10] 
-    seed = int(sys.argv[11])
+    k_in = int(sys.argv[3])
+    k_out = int(sys.argv[4])
+    delta_0 = float(sys.argv[5])
+    kappa = float(sys.argv[6]) 
+    communication_frequency = float(sys.argv[7]) 
+    sig_op_0 = float(sys.argv[8]) 
+    p_rewire = float(sys.argv[9])
+    T = int(sys.argv[10])    
+    resolution = sys.argv[11] 
+    seed = int(sys.argv[12])
 
     step=100 if T<=1000 else min(5000, int(T/10))
     track_times = np.arange(0,T+1, step=step)
@@ -120,7 +124,8 @@ if __name__=="__main__":
         folder=folder, 
         n_agents=n_agents, 
         k=k, 
-        h=h, 
+        k_in = k_in,
+        k_out = k_out,
         a_ins=a_ins, 
         a_outs=a_outs, 
         sig_op_0=sig_op_0, 
