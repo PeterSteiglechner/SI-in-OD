@@ -2,7 +2,7 @@
 
 . /opt/conda/etc/profile.d/conda.sh
 
-conda activate phd1
+conda activate ingroup
 
 export n=$1
 export k=$2
